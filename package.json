@@ -1,0 +1,25 @@
+{
+  "name": "notion-crypto-template",
+  "version": "1.0.0",
+  "description": "Backend services for Personal Crypto Notion Template",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/josecollado/Notion-Crypto-Template.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/josecollado/Notion-Crypto-Template/issues"
+  },
+  "homepage": "https://github.com/josecollado/Notion-Crypto-Template#readme",
+  "dependencies": {
+    "@notionhq/client": "^2.2.13",
+    "express": "^4.18.2",
+    "pm2": "^4.2.3"
+  }
+}
