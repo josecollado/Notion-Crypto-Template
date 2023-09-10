@@ -29,12 +29,12 @@ const countsAndDebugging = async () => {
       const pageId = result.id;
       const status = result.properties['Status'].select.name;
 
-      if (liveCoinStatusEmoji === '❌' && debugCount < 10 && status !== 'Error') {
+      if (liveCoinStatusEmoji === '❌' && debugCount < 5 && status !== 'Error') {
         fetchLivePricing('new');
         debugCount++;
       }
 
-      if (debugCount > 10) {
+      if (debugCount > 5) {
         setErrorMSG(pageId);
         debugCount = 0;
       }
