@@ -25,10 +25,7 @@ const recordEntryCounts = async () => {
       const pageId = result.id
       const status = result.properties['Status'].select.name
       if(liveCoinStatusEmoji === '❌' && debugCount < 10 && status != "Error" ) fetchLivePricing(), debugCount++ 
-      else {
-        setErrorMSG(pageId);
-        debugCount = 0
-      }
+      if(debugCount > 10) setErrorMSG(pageId), debugCount = 0
     }
     if(recordCount < response.results.length){
       recordCount = response.results.length
