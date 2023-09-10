@@ -7,21 +7,11 @@ if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
     'Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.'
   );
   process.exit(1);
-}// 
+} //
 
 // Initialize Notion client
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const getCoinGeckoList = async () => {
-    try {
-      const response = await axios.get('https://api.coingecko.com/api/v3/coins/list', {
-        headers: { accept: 'application/json' }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching Gecko List:');
-      throw error;
-    }
-  };
+
 const coinNotFound = async (pageId) => {
   const notionUpdate = await notion.pages.update({
     page_id: pageId,
@@ -51,10 +41,14 @@ const coinNotFound = async (pageId) => {
 };
 
 const updatePricing = async (coin, pageId) => {
-  let list = await getCoinGeckoList()
-  const coinSearch = list.find(
-    (value) => value.symbol === coin.toLowerCase()
-  );
+  const coinSearch = await axios
+    .get('https://api.coingecko.com/api/v3/coins/list', {
+      headers: { accept: 'application/json' },
+    })
+    .then((response) =>
+      response.data.find((value) => value.symbol === coin.toLowerCase())
+    )
+    .catch((err) => console.log('Error fetching coin list'));
 
   if (!coinSearch) return coinNotFound(pageId);
 
@@ -103,9 +97,11 @@ const updatePricing = async (coin, pageId) => {
       },
     });
 
-    console.log(`Change made to page id:${pageId} for the ${coinSearch.symbol} coin record`);
+    console.log(
+      `Change made to page id:${pageId} for the ${coinSearch.symbol} coin record`
+    );
   } catch (error) {
-    console.error('Error fetching Coin Price:', error);
+    console.error('Error fetching Coin Price');
   }
 };
 
