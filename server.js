@@ -24,7 +24,7 @@ const recordEntryCounts = async () => {
       const liveCoinStatusEmoji = result.properties['Live Coin Status'].rich_text[0].plain_text;
       const pageId = result.id
       const status = result.properties['Status'].select.name
-      if(liveCoinStatusEmoji === '❌' && debugCount < 10 && status != "Error" ) fetchLivePricing(), debugCount++ 
+      if(liveCoinStatusEmoji === '❌' && debugCount < 10 && status != "Error" ) fetchLivePricing('new'), debugCount++ 
       if(debugCount > 10) setErrorMSG(pageId), debugCount = 0
     }
     if(recordCount < response.results.length){
