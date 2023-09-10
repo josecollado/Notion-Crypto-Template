@@ -18,7 +18,7 @@ const fetchLivePricing = async (mode) => {
 
             for (const result of response.results) {
                 const { name: coinStatus } = result.properties.Status.select;
-                if (coinStatus === 'Sold') continue;
+                if (coinStatus === 'Sold' || coinStatus === 'Error') continue;
                 const pageId = result.id;
                 const coinTitle = result.properties['Coin Ticker'].title[0].plain_text;
                 if(mode === 'new'){

@@ -1,10 +1,12 @@
 const express = require('express');
 const fetchLivePricing = require('./fetchLivePricing');
+const setErrorMSG = require('./setErrorMSG')
 require('dotenv').config();
 const { Client } = require('@notionhq/client');
 const app = express();
 const port = 3000;
 let recordCount = 0
+let debugCount = 0
 
 // Ensure environment variables are set
 if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
@@ -18,17 +20,28 @@ const databaseId = process.env.NOTION_BUY_CRYPTO_DATABASE;
 const recordEntryCounts = async () => {
   try {
     const response = await notion.databases.query({ database_id: databaseId });
+    for (const result of response.results) {
+      const liveCoinStatusEmoji = result.properties['Live Coin Status'].rich_text[0].plain_text;
+      const pageId = result.id
+      const status = result.properties['Status'].select.name
+      if(liveCoinStatusEmoji === '❌' && debugCount < 10 && status != "Error" ) fetchLivePricing(), debugCount++ 
+      else {
+        setErrorMSG(pageId);
+        debugCount = 0
+      }
+    }
     if(recordCount < response.results.length){
       recordCount = response.results.length
       fetchLivePricing('new');
-    }else if(response.results.length === 0) recordCount = 0
-    console.log(recordCount)
+    }else if(response.results.length === 0 || !response.results) recordCount = 0
+    console.log('Current Debug Count -- > ', debugCount)
+    console.log("Current Record Count -- > ", recordCount)
   } catch (error) {
     console.error('error checking record count', error)
   }
 }
 
-setInterval(recordEntryCounts, 60 * 1000);
+setInterval(recordEntryCounts, 60 * 1000); // refreshes every minute
 
 // Execute the function immediately upon server start
 fetchLivePricing();

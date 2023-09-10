@@ -18,7 +18,7 @@ const getCoinGeckoList = async () => {
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching Gecko List:', error);
+      console.error('Error fetching Gecko List:');
       throw error;
     }
   };
