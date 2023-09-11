@@ -28,15 +28,16 @@ const countsAndDebugging = async () => {
       const liveCoinStatusEmoji = result.properties['Live Coin Status'].rich_text[0].plain_text;
       const pageId = result.id;
       const status = result.properties['Status'].select.name;
-
       if (liveCoinStatusEmoji === '❌' && debugCount < 5 && status !== 'Error') {
+        console.log('reaching new fetching')
         fetchLivePricing('new');
         debugCount++;
       }
 
-      if (debugCount > 5) {
-        setErrorMSG(pageId);
+      if (debugCount === 5) {
+        console.log('reaching error if statement')
         debugCount = 0;
+        setErrorMSG(pageId);
       }
     }
 
