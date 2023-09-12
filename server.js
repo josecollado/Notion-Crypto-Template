@@ -16,7 +16,9 @@ let debugCount = 0;
 
 // Ensure environment variables are set
 if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
-  console.error('Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.');
+  console.error(
+    'Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.'
+  );
   process.exit(1);
 }
 
@@ -25,17 +27,22 @@ const countsAndDebugging = async () => {
     const response = await notion.databases.query({ database_id: databaseId });
 
     for (const result of response.results) {
-      const liveCoinStatusEmoji = result.properties['Live Coin Status'].rich_text[0].plain_text;
+      const liveCoinStatusEmoji =
+        result.properties['Live Coin Status'].rich_text[0].plain_text;
       const pageId = result.id;
       const status = result.properties['Status'].select.name;
-      if (liveCoinStatusEmoji === '❌' && debugCount < 5 && status !== 'Error') {
-        console.log('reaching new fetching')
+      if (
+        liveCoinStatusEmoji === '❌' &&
+        debugCount < 5 &&
+        status !== 'Error'
+      ) {
+        console.log('reaching new fetching');
         fetchLivePricing('new');
         debugCount++;
       }
 
       if (debugCount === 5) {
-        console.log('reaching error if statement')
+        console.log('reaching error if statement');
         debugCount = 0;
         setErrorMSG(pageId);
       }
@@ -44,7 +51,9 @@ const countsAndDebugging = async () => {
     if (recordCount < response.results.length) {
       recordCount = response.results.length;
       fetchLivePricing('new');
-    } else if (!response.results || response.results.length === 0) {
+    }
+    if (response.results.length < recordCount)recordCount = response.results.length;
+    else if (!response.results || response.results.length === 0) {
       recordCount = 0;
     }
 
