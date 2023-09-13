@@ -1,72 +1,32 @@
+// Required dependencies
 const axios = require('axios');
-const { Client } = require('@notionhq/client');
-require('dotenv').config();
-// Ensure environment variables are set
-if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
-  console.error(
-    'Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.'
-  );
-  process.exit(1);
-} //
 
-// Initialize Notion client
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-
-const coinNotFound = async (pageId) => {
-  const notionUpdate = await notion.pages.update({
-    page_id: pageId,
-    properties: {
-      'Live Coin Status': {
-        id: '%60K%5CD',
-        type: 'rich_text',
-        rich_text: [
-          {
-            type: 'text',
-            text: { content: '❌', link: null },
-            annotations: {
-              bold: false,
-              italic: false,
-              strikethrough: false,
-              underline: false,
-              code: false,
-              color: 'default',
-            },
-            plain_text: '❌',
-            href: null,
-          },
-        ],
-      },
-    },
-  });
-};
-
-const updatePricing = async (coin, pageId) => {
-  const coinSearch = await axios
-    .get('https://api.coingecko.com/api/v3/coins/list', {
-      headers: { accept: 'application/json' },
-    })
-    .then((response) =>
-      response.data.find((value) => value.symbol === coin.toLowerCase())
-    )
-    .catch((err) => console.log('Error fetching coin list'));
-
-  if (!coinSearch) return coinNotFound(pageId);
-
+/**
+ * Updates the pricing of a given coin on a Notion page.
+ *
+ * @param {string} coin - The name of the coin to fetch the price for.
+ * @param {string} pageId - The ID of the Notion page to update.
+ * @param {Object} notionClient - The Notion client instance to use for updating the page.
+ */
+const updatePricing = async (coin, pageId, notionClient) => {
   try {
+    // Fetch the current price of the coin in USD from the CoinGecko API
     const response = await axios.get(
       'https://api.coingecko.com/api/v3/simple/price',
       {
         params: {
-          ids: coinSearch.id,
+          ids: coin,
           vs_currencies: 'usd',
         },
         headers: { accept: 'application/json' },
       }
     );
 
+    // Extract the coin price from the response
     const coinPrice = Object.values(response.data)[0].usd;
 
-    const notionUpdate = await notion.pages.update({
+    // Update the Notion page with the coin's live status and price
+    await notionClient.pages.update({
       page_id: pageId,
       properties: {
         'Live Coin Status': {
@@ -97,12 +57,13 @@ const updatePricing = async (coin, pageId) => {
       },
     });
 
-    console.log(
-      `Change made to page id:${pageId} for the ${coinSearch.symbol} coin record`
-    );
+    // Log the successful update
+    console.log(`Changes made to page id: ${pageId} for the ${coin} coin record`);
   } catch (error) {
+    // Log any errors that occur during the fetch or update process
     console.error('Error fetching Coin Price');
   }
 };
 
+// Export the updatePricing function for use in other modules
 module.exports = updatePricing;

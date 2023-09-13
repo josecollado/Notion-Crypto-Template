@@ -1,78 +1,128 @@
+// Import required modules
 const express = require('express');
+const axios = require('axios');
 const { Client } = require('@notionhq/client');
 require('dotenv').config();
-
 const fetchLivePricing = require('./fetchLivePricing');
 const setErrorMSG = require('./setErrorMSG');
+const { monitor } = require('./monitor');
 
+// Initialize Express app
 const app = express();
+
+// Define the server's listening port
 const port = 3000;
 
+// Global variable to store the list of coins
+let globalCoinList;
+
+// Initialize the Notion client using the API key from environment variables
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const databaseId = process.env.NOTION_BUY_CRYPTO_DATABASE;
 
-let recordCount = 0;
-let debugCount = 0;
+// Define a map for Notion databases to track debug counts and record counts
+let dbMap = [
+  {
+    id: process.env.NOTION_BUY_CRYPTO_DATABASE,
+    debugCount: 0,
+    recordCount: 0,
+  },
+  {
+    id: process.env.NOTION_BUY_CRYPTO_FINANCE_DATABASE,
+    debugCount: 0,
+    recordCount: 0,
+  },
+];
 
-// Ensure environment variables are set
-if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
+// Check if essential environment variables are set
+if (
+  !process.env.NOTION_API_KEY ||
+  !process.env.NOTION_BUY_CRYPTO_DATABASE ||
+  !process.env.NOTION_BUY_CRYPTO_FINANCE_DATABASE
+) {
   console.error(
-    'Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.'
+    'Please ensure NOTION_API_KEY, NOTION_BUY_CRYPTO_DATABASE, and NOTION_BUY_CRYPTO_FINANCE_DATABASE are set in your .env file.'
   );
   process.exit(1);
 }
 
-const countsAndDebugging = async () => {
+/**
+ * Function to handle counts and debugging for Notion databases.
+ * @param {Object} databaseObj - The database object containing ID, debugCount, and recordCount.
+ */
+const countsAndDebugging = async (databaseObj) => {
+  let { id, debugCount, recordCount } = databaseObj;
+
   try {
-    const response = await notion.databases.query({ database_id: databaseId });
+    const response = await notion.databases.query({ database_id: id });
 
     for (const result of response.results) {
-      const liveCoinStatusEmoji =
-        result.properties['Live Coin Status'].rich_text[0].plain_text;
+      const liveCoinStatusEmoji = result.properties['Live Coin Status'].rich_text[0].plain_text;
       const pageId = result.id;
       const status = result.properties['Status'].select.name;
-      if (
-        liveCoinStatusEmoji === '❌' &&
-        debugCount < 5 &&
-        status !== 'Error'
-      ) {
-        console.log('reaching new fetching');
-        fetchLivePricing('new');
+
+      if (liveCoinStatusEmoji === '❌' && debugCount < 5 && status !== 'Error') {
         debugCount++;
+        fetchLivePricing('new', id, globalCoinList, notion);
       }
 
       if (debugCount === 5) {
-        console.log('reaching error if statement');
         debugCount = 0;
-        setErrorMSG(pageId);
+        setErrorMSG(pageId, notion);
       }
     }
 
     if (recordCount < response.results.length) {
       recordCount = response.results.length;
-      fetchLivePricing('new');
-    }
-    if (response.results.length < recordCount)recordCount = response.results.length;
-    else if (!response.results || response.results.length === 0) {
-      recordCount = 0;
+      fetchLivePricing('new', id, globalCoinList, notion);
     }
 
-    console.log('Current Debug Count:', debugCount);
-    console.log('Current Record Count:', recordCount);
+    if (response.results.length < recordCount) recordCount = response.results.length;
+    else if (!response.results || response.results.length === 0) recordCount = 0;
+
+    console.log(`
+      Current Database Id: ${id}  
+      Current Debug count: ${debugCount}
+      Current Record Count: ${recordCount}
+    `);
+    dbMap = [...dbMap.filter(value => value.id !== id), { id, debugCount, recordCount }];
+
   } catch (error) {
     console.error('Error checking record count', error);
   }
 };
 
-// Refreshes every minute
-setInterval(countsAndDebugging, 60 * 1000);
+// Monitor server health and check database counts/debugging every minute
+setInterval(() => {
+  monitor();
+  dbMap.forEach(countsAndDebugging);
+}, 60 * 1000);
 
-// Execute the function immediately upon server start
-fetchLivePricing();
+// Refresh coin pricing for the databases every day
+setInterval(() => {
+  dbMap.forEach(value => fetchLivePricing('refresh', value.id, globalCoinList, notion));
+}, 24 * 60 * 60 * 1000);
 
-// Refreshes once a day
-setInterval(() => fetchLivePricing('refresh'), 24 * 60 * 60 * 1000);
+// Endpoint to check server status
+app.get('/status', (req, res) => {
+  res.statusCode = 200;
+  res.json({ message: 'Server is running OK!' });
+});
 
-app.listen(port, () => {
+// Start the server
+app.listen(port, async () => {
   console.log(`Server is running on port ${port}`);
+
+  try {
+    const response = await axios.get('https://api.coingecko.com/api/v3/coins/list', {
+      headers: { accept: 'application/json' },
+    });
+    globalCoinList = await response.data;
+  } catch (err) {
+    console.error('Error fetching coin list', err);
+  }
+
+  // Refresh pricing on server start
+  dbMap.forEach(async value => {
+    fetchLivePricing('refresh', value.id, await globalCoinList, notion);
+  });
 });

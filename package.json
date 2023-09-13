@@ -4,7 +4,8 @@
   "description": "Backend services for Personal Crypto Notion Template",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start server.js --watch"
+    "start": "pm2 start server.js --watch",
+    "dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",

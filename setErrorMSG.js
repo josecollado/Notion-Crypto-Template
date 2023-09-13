@@ -1,18 +1,16 @@
-const { Client } = require('@notionhq/client');
-require('dotenv').config();
-// Ensure environment variables are set
-if (!process.env.NOTION_API_KEY || !process.env.NOTION_BUY_CRYPTO_DATABASE) {
-  console.error(
-    'Please ensure NOTION_API_KEY and NOTION_BUY_CRYPTO_DATABASE are set in your .env file.'
-  );
-  process.exit(1);
-}// 
-
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const setErrorMSG = async (pageId) => {
-    const notionUpdate = await notion.pages.update({
+/**
+ * Sets an error message on a Notion page.
+ * 
+ * @param {string} pageId - The ID of the Notion page to update.
+ * @param {object} notionClient - The Notion client instance used for API calls.
+ */
+const setErrorMSG = async (pageId, notionClient) => {
+  try {
+    // Define the update payload for the Notion page
+    const notionUpdate = await notionClient.pages.update({
       page_id: pageId,
       properties: {
+        // Update the 'Live Coin Status' property with a '❌' symbol
         'Live Coin Status': {
           id: '%60K%5CD',
           type: 'rich_text',
@@ -33,15 +31,23 @@ const setErrorMSG = async (pageId) => {
             },
           ],
         },
+        // Update the 'Status' property with the 'Error' status
         'Status': {
             id: 'UA%7CV',
             type: 'select',
             select: { id: '}y<|', name: 'Error', color: 'yellow' }
-          }
+        }
       },
     });
-  };
 
+    // Log success message
+    console.log('Set Error on Record completed Successfully for page ID:', pageId);
+    
+  } catch (error) {
+    // Log error message
+    console.log('Error Setting Error message on Notion Record');
+  }
+};
 
-
-  module.exports = setErrorMSG
+// Export the setErrorMSG function
+module.exports = setErrorMSG;
