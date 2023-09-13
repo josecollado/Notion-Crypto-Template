@@ -80,7 +80,7 @@ const countsAndDebugging = async (databaseObj) => {
     else if (!response.results || response.results.length === 0) recordCount = 0;
 
     console.log(`
-      Current Database Id: ${id}  
+      Database Id: ${id}  
       Current Debug count: ${debugCount}
       Current Record Count: ${recordCount}
     `);
@@ -99,6 +99,7 @@ setInterval(() => {
 
 // Refresh coin pricing for the databases every day
 setInterval(() => {
+  console.log('==============COMPLETING DAILY PRICE FETCH======================')
   dbMap.forEach(value => fetchLivePricing('refresh', value.id, globalCoinList, notion));
 }, 24 * 60 * 60 * 1000);
 
