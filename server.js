@@ -103,7 +103,9 @@ setInterval(() => {
 // Refresh coin pricing for the databases every day
 setInterval(() => {
   axios.post(DISCORD_WEBHOOK_URL, {
-    content: '==============COMPLETING DAILY PRICE FETCH======================'
+    content: `@here
+
+    ==============COMPLETING DAILY PRICE FETCH======================`
   });
   console.log('==============COMPLETING DAILY PRICE FETCH======================')
   dbMap.forEach(value => fetchLivePricing('refresh', value.id, globalCoinList, notion));
@@ -125,7 +127,9 @@ app.listen(port, async () => {
     });
     globalCoinList = await response.data;
     axios.post(DISCORD_WEBHOOK_URL, {
-      content: '=========STARTING SERVER==========='
+      content: `@here
+      
+      =========STARTING SERVER===========`
     });
   } catch (err) {
     console.error('Error fetching coin list', err);
