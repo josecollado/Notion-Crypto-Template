@@ -7,6 +7,9 @@ const fetchLivePricing = require('./fetchLivePricing');
 const setErrorMSG = require('./setErrorMSG');
 const { monitor } = require('./monitor');
 
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+
+
 // Initialize Express app
 const app = express();
 
@@ -99,6 +102,9 @@ setInterval(() => {
 
 // Refresh coin pricing for the databases every day
 setInterval(() => {
+  axios.post(DISCORD_WEBHOOK_URL, {
+    content: '==============COMPLETING DAILY PRICE FETCH======================'
+  });
   console.log('==============COMPLETING DAILY PRICE FETCH======================')
   dbMap.forEach(value => fetchLivePricing('refresh', value.id, globalCoinList, notion));
 }, 24 * 60 * 60 * 1000);
@@ -118,6 +124,9 @@ app.listen(port, async () => {
       headers: { accept: 'application/json' },
     });
     globalCoinList = await response.data;
+    axios.post(DISCORD_WEBHOOK_URL, {
+      content: '=========STARTING SERVER==========='
+    });
   } catch (err) {
     console.error('Error fetching coin list', err);
   }
