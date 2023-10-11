@@ -78,7 +78,7 @@ async function monitor() {
       checkExpressServerStatus()
     ]);
   } catch (error) {
-    await sendDiscordAlert(`@here -- Alert: ${error.message}`);
+    await sendDiscordAlert(`@here -- Alert: ${error}`);
   }
 }
 
